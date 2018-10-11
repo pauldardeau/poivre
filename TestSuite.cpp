@@ -186,7 +186,14 @@ void TestSuite::requireException(const char* exceptionType,
    } catch (BasicException& be) {
       if (strcmp(exceptionType, be.getType())) {
          ++m_numFailures;
-         throw BasicException("Wrong exception type");
+         std::string exc_msg(testDesc);
+         exc_msg += " - Wrong exception type (";
+         exc_msg += "exp=";
+         exc_msg += exceptionType;
+         exc_msg += ",act=";
+         exc_msg += be.getType();
+         exc_msg += ")";
+         throw BasicException(exc_msg);
       } else {
          // we got what's expected
       }
