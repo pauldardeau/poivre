@@ -24,7 +24,7 @@ public:
     * Default constructor
     */
    Runnable() :
-      m_completionObserver(NULL),
+      m_completionObserver(nullptr),
       m_runByThreadId(0) {
    }
 
