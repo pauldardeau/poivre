@@ -1,8 +1,8 @@
 # Copyright Paul Dardeau, SwampBits LLC 2017
 # BSD License
 
-CC = g++
-CC_OPTS = -c -shared -fPIC -pthread
+CC = clang++
+CC_OPTS = -c -Wall -std=c++11 -fPIC -pthread
 
 LIB_NAME = poivre.so
 
