@@ -57,7 +57,7 @@ public:
    void requireNonEmptyString(const std::string& actual,
                               const std::string& testDesc);
    void requireException(const char* exceptionType,
-                         Runnable* run,
+                         poivre::Runnable* run,
                          const std::string& testDesc); 
    
    void startingTestCase(const TestCase& testCase);
