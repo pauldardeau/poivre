@@ -165,7 +165,8 @@ void TestSuite::requireNonEmptyString(const std::string& actual,
                                       const std::string& testDesc) {
    if (actual.empty()) {
       ++m_numFailures;
-      printf("*** failure: expected non-empty string (%s)\n",
+      printf("*** failure: expected non-empty string, actual='%s' (%s)\n",
+             actual.c_str(),
              testDesc.c_str());
    }
    
