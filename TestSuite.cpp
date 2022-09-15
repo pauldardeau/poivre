@@ -121,7 +121,7 @@ void TestSuite::endingTestCase(const TestCase& testCase) {
 
 //******************************************************************************
 
-void TestSuite::require(bool expression, const std::string& testDesc) {
+void TestSuite::require(bool expression, std::string testDesc) {
    if (!expression) {
       ++m_numFailures;
       printf("*** failure: expected true, got false (%s)\n",
@@ -133,7 +133,7 @@ void TestSuite::require(bool expression, const std::string& testDesc) {
 
 //******************************************************************************
 
-void TestSuite::requireFalse(bool expression, const std::string& testDesc) {
+void TestSuite::requireFalse(bool expression, std::string testDesc) {
    if (expression) {
       ++m_numFailures;
       printf("*** failure: expected false, got true (%s)\n",
@@ -147,7 +147,7 @@ void TestSuite::requireFalse(bool expression, const std::string& testDesc) {
 
 void TestSuite::requireStringEquals(const std::string& expected,
                                     const std::string& actual,
-                                    const std::string& testDesc) {
+                                    std::string testDesc) {
    if (expected != actual) {
       ++m_numFailures;
       printf("*** failure: expected '%s', actual='%s' (%s)\n",
@@ -162,7 +162,7 @@ void TestSuite::requireStringEquals(const std::string& expected,
 //******************************************************************************
 
 void TestSuite::requireNonEmptyString(const std::string& actual,
-                                      const std::string& testDesc) {
+                                      std::string testDesc) {
    if (actual.empty()) {
       ++m_numFailures;
       printf("*** failure: expected non-empty string (%s)\n",
@@ -176,7 +176,7 @@ void TestSuite::requireNonEmptyString(const std::string& actual,
 
 void TestSuite::requireException(const char* exceptionType,
                                  Runnable* runnable,
-                                 const std::string& testDesc) {
+                                 std::string testDesc) {
    ++m_numTestsExecuted;
    AutoPointer<Runnable*> uniqueRunnable(runnable);
    try {
