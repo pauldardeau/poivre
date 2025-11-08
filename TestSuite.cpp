@@ -108,7 +108,7 @@ bool TestSuite::deleteFile(const std::string& filePath) {
 //******************************************************************************
 
 void TestSuite::startingTestCase(const TestCase& testCase) {
-   printf("starting test case %s\n", testCase.getName().c_str());
+   printf("--------------- running test: %s -----------\n", testCase.getName().c_str());
    setup();
 }
 

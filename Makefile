@@ -2,7 +2,7 @@
 # BSD License
 
 CC = g++
-CC_OPTS = -c -shared -fPIC -pthread
+CC_OPTS = -c -std=c++20 -shared -fPIC -pthread
 
 LIB_NAME = poivre.so
 
