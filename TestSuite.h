@@ -21,33 +21,33 @@ private:
    int m_numTestsExecuted;
    int m_numFailures;
 
-   
+
 protected:
    virtual void setup();
    virtual void tearDown();
-   
+
    virtual void suiteSetup();
    virtual void suiteTearDown();
    virtual void runTests() = 0;
 
-   
+
 public:
    TestSuite(const std::string& suiteName);
    TestSuite(const TestSuite& copy);
-   
+
    virtual ~TestSuite();
-   
+
    TestSuite& operator=(const TestSuite& copy);
 
-   
+
    // file management
    std::string getTempFile() const;
    bool deleteFile(const std::string& filePath);
-   
+
    void run();
-   
+
    const std::string& getName() const;
-   
+
    void require(bool expression, std::string testDesc="");
    void requireFalse(bool expression, std::string testDesc="");
 
@@ -58,11 +58,11 @@ public:
                               std::string testDesc="");
    void requireException(const char* exceptionType,
                          Runnable* run,
-                         std::string testDesc=""); 
-   
+                         std::string testDesc="");
+
    void startingTestCase(const TestCase& testCase);
    void endingTestCase(const TestCase& testCase);
-   
+
 };
 
 }

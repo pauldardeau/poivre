@@ -39,11 +39,11 @@ TestSuite& TestSuite::operator=(const TestSuite& copy) {
    if (this == &copy) {
       return *this;
    }
-   
+
    m_suiteName = copy.m_suiteName;
    m_numTestsExecuted = copy.m_numTestsExecuted;
    m_numFailures = copy.m_numFailures;
-   
+
    return *this;
 }
 
@@ -127,7 +127,7 @@ void TestSuite::require(bool expression, std::string testDesc) {
       printf("*** failure: expected true, got false (%s)\n",
              testDesc.c_str());
    }
-   
+
    ++m_numTestsExecuted;
 }
 
@@ -139,7 +139,7 @@ void TestSuite::requireFalse(bool expression, std::string testDesc) {
       printf("*** failure: expected false, got true (%s)\n",
              testDesc.c_str());
    }
-   
+
    ++m_numTestsExecuted;
 }
 
@@ -168,7 +168,7 @@ void TestSuite::requireNonEmptyString(const std::string& actual,
       printf("*** failure: expected non-empty string (%s)\n",
              testDesc.c_str());
    }
-   
+
    ++m_numTestsExecuted;
 }
 

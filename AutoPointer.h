@@ -38,10 +38,10 @@ public:
     * @return pointer to owned object
     */
    T& operator->() { return m_object; }
-   
+
    T& operator()() { return m_object; }
 
-   
+
    /**
     * Assigns new object to be owned by the AutoPointer. Deletes old one if present.
     * @param copyObject the new object that will be owned.
@@ -51,7 +51,7 @@ public:
          if (m_object) {
             delete m_object;
          }
-      
+
          m_object = copyObject;
       }
    }
@@ -64,10 +64,10 @@ public:
       return (NULL != m_object);
    }
 
-   T m_object;   
+   T m_object;
 
 private:
-   
+
    // no copies
    AutoPointer(const AutoPointer<T>&);
    AutoPointer<T>& operator=(const AutoPointer<T>&);

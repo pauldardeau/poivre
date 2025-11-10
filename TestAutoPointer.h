@@ -13,7 +13,7 @@ class TestAutoPointer : public TestSuite
 {
 protected:
    void runTests();
-   
+
    void testConstructor();
    void testOperatorArrow();
    void testAssign();
@@ -22,7 +22,7 @@ protected:
 
 public:
    TestAutoPointer();
-   
+
 };
 
 }

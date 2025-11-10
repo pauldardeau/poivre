@@ -64,9 +64,9 @@ public:
       if (this == &copy) {
          return *this;
       }
-        
+
       m_what = copy.m_what;
-        
+
       return *this;
    }
 
@@ -85,7 +85,7 @@ public:
    virtual const std::string& whatString() const {
       return m_what;
    }
-    
+
 private:
    std::string m_what;
 };

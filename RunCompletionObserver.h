@@ -21,7 +21,7 @@ public:
     * Destructor
     */
    virtual ~RunCompletionObserver() {}
-   
+
    /**
     * Notifies the observer that the Runnable has completed
     * @param runnable the Runnable that has completed
