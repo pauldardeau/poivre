@@ -17,8 +17,9 @@ jobs:
           name: poivre-library
           path: poivre.so
       - name: Dispatch event to chaudiere
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@v4
         with:
+          event-type: poivre-build
           token: ${{ secrets.REPO_CHAUDIERE_PAT }}
           repository: pauldardeau/chaudiere
           event: artifact_ready
