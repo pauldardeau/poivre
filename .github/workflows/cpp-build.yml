@@ -1,4 +1,4 @@
-ername: Build and Dispatch Artifact
+name: Build and Dispatch Artifact
 on:
   push:
     branches: [ "master" ]
