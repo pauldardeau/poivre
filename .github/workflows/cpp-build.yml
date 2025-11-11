@@ -1,4 +1,4 @@
-name: Build and Dispatch Artifact
+ername: Build and Dispatch Artifact
 on:
   push:
     branches: [ "master" ]
@@ -17,7 +17,7 @@ jobs:
           name: poivre-library
           path: poivre.so
       - name: Dispatch event to chaudiere
-        uses: repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.REPO_CHAUDIERE_PAT }}
           repository: pauldardeau/chaudiere
