@@ -1,3 +1,5 @@
+[![Build and Dispatch Artifact](https://github.com/pauldardeau/poivre/actions/workflows/cpp-build.yml/badge.svg)](https://github.com/pauldardeau/poivre/actions/workflows/cpp-build.yml)
+
 # poivre
 C++ unit testing
 
