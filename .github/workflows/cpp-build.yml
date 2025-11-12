@@ -22,5 +22,4 @@ jobs:
           event-type: poivre-build
           token: ${{ secrets.REPO_CHAUDIERE_PAT }}
           repository: pauldardeau/chaudiere
-          event: artifact_ready
           client_payload: '{"artifact_name": "poivre-library", "run_id": "${{ github.run_id }}"}'
