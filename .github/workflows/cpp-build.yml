@@ -1,4 +1,4 @@
-name: Build and Dispatch Artifact
+name: Build
 on:
   push:
     branches: [ "master" ]
@@ -9,10 +9,5 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Build artifact
+      - name: Build
         run: make
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: poivre-library
-          path: poivre.so
