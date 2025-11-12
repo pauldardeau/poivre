@@ -6,8 +6,7 @@ CC_OPTS = -c -std=c++20 -shared -fPIC -pthread
 
 LIB_NAME = poivre.so
 
-OBJS = TestAutoPointer.o \
-TestCase.o \
+OBJS = TestCase.o \
 TestSuite.o \
 
 all : $(LIB_NAME)
