@@ -19,7 +19,7 @@ jobs:
       - name: Dispatch event to chaudiere
         uses: peter-evans/repository-dispatch@v4
         with:
-          event-type: poivre-build
           token: ${{ secrets.REPO_CHAUDIERE_PAT }}
           repository: pauldardeau/chaudiere
+          event-type: poivre-build
           client_payload: '{"artifact_name": "poivre-library", "run_id": "${{ github.run_id }}"}'
