@@ -186,14 +186,14 @@ void TestSuite::requireException(const char* exceptionType,
    } catch (BasicException& be) {
       if (strcmp(exceptionType, be.getType())) {
          ++m_numFailures;
-         std::string exc_msg(testDesc);
-         exc_msg += " - Wrong exception type (";
-         exc_msg += "exp=";
-         exc_msg += exceptionType;
-         exc_msg += ",act=";
-         exc_msg += be.getType();
-         exc_msg += ")";
-         throw BasicException(exc_msg);
+         std::string msg(testDesc);
+         msg += " - Wrong exception type (";
+         msg += "exp=";
+         msg += exceptionType;
+         msg += ",act=";
+         msg += be.getType();
+         msg += ")";
+         printf("*** failure: %s\n", msg.c_str());
       } else {
          // we got what's expected
       }
@@ -201,22 +201,22 @@ void TestSuite::requireException(const char* exceptionType,
       //printf("std::exception caught: %s\n", e.what());
 
       ++m_numFailures;
-      std::string exc_msg(testDesc);
-      exc_msg += " - Wrong exception type (";
-      exc_msg += "exp=";
-      exc_msg += exceptionType;
-      exc_msg += ",act=std::exception)";
-      throw BasicException(exc_msg);
+      std::string msg(testDesc);
+      msg += " - Wrong exception type (";
+      msg += "exp=";
+      msg += exceptionType;
+      msg += ",act=std::exception)";
+      printf("*** failure: %s\n", msg.c_str());
    } catch (...) {
       //printf("unknown exception caught\n");
 
       ++m_numFailures;
-      std::string exc_msg(testDesc);
-      exc_msg += " - Wrong exception type (";
-      exc_msg += "exp=";
-      exc_msg += exceptionType;
-      exc_msg += ",act=unknown)";
-      throw BasicException(exc_msg);
+      std::string msg(testDesc);
+      msg += " - Wrong exception type (";
+      msg += "exp=";
+      msg += exceptionType;
+      msg += ",act=unknown)";
+      printf("*** failure: %s\n", msg.c_str());
    }
 }
 
