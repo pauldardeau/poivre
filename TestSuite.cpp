@@ -198,9 +198,25 @@ void TestSuite::requireException(const char* exceptionType,
          // we got what's expected
       }
    } catch (std::exception& e) {
-      printf("std::exception caught: %s\n", e.what());
+      //printf("std::exception caught: %s\n", e.what());
+
+      ++m_numFailures;
+      std::string exc_msg(testDesc);
+      exc_msg += " - Wrong exception type (";
+      exc_msg += "exp=";
+      exc_msg += exceptionType;
+      exc_msg += ",act=std::exception)";
+      throw BasicException(exc_msg);
    } catch (...) {
-      printf("unknown exception caught\n");
+      //printf("unknown exception caught\n");
+
+      ++m_numFailures;
+      std::string exc_msg(testDesc);
+      exc_msg += " - Wrong exception type (";
+      exc_msg += "exp=";
+      exc_msg += exceptionType;
+      exc_msg += ",act=unknown)";
+      throw BasicException(exc_msg);
    }
 }
 
