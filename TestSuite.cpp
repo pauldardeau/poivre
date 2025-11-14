@@ -206,3 +206,11 @@ void TestSuite::requireException(const char* exceptionType,
 
 //******************************************************************************
 
+void TestSuite::failTest(const std::string& failureMessage) {
+   ++m_numFailures;
+   ++m_numTestsExecuted;
+   printf("*** failure: %s\n", failureMessage.c_str());
+}
+
+//******************************************************************************
+

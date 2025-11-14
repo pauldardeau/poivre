@@ -63,6 +63,8 @@ public:
    void startingTestCase(const TestCase& testCase);
    void endingTestCase(const TestCase& testCase);
 
+   void failTest(const std::string& failureMessage);
+
 };
 
 }
