@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include "TestSuite.h"
 #include "BasicException.h"
@@ -85,17 +86,15 @@ void TestSuite::run() {
 //******************************************************************************
 
 std::string TestSuite::getTempFile() const {
-   return "testsuite.txt";
-   /*
-   char fileTemplate[] = "/tmp/fileXXXXXX.test";
+   char fileTemplate[] = "/tmp/poivreXXXXXX";
    const int fd = ::mkstemp(fileTemplate);
    if (-1 != fd) {
+      ::close(fd);
       return std::string(fileTemplate);
    } else {
       printf("error: mkstemp failed. errno=%d\n", errno);
       return std::string("");
    }
-   */
 }
 
 //******************************************************************************
@@ -178,11 +177,16 @@ void TestSuite::requireException(const char* exceptionType,
                                  Runnable* runnable,
                                  std::string testDesc) {
    ++m_numTestsExecuted;
-   AutoPointer<Runnable*> uniqueRunnable(runnable);
+   AutoPointer<Runnable> uniqueRunnable(runnable);
    try {
       uniqueRunnable->run();
       ++m_numFailures;
-      throw BasicException("no exception thrown");
+      std::string msg(testDesc);
+      msg += " - no exception thrown (exp=";
+      msg += exceptionType;
+      msg += ")";
+      printf("*** failure: %s\n", msg.c_str());
+      return;
    } catch (BasicException& be) {
       if (strcmp(exceptionType, be.getType())) {
          ++m_numFailures;
