@@ -64,9 +64,8 @@ public:
       return (NULL != m_object);
    }
 
-   T* m_object;
-
 private:
+   T* m_object;
 
    // no copies
    AutoPointer(const AutoPointer<T>&);
