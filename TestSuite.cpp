@@ -103,14 +103,14 @@ void TestSuite::startingTestCase(const TestCase& testCase) {
 
 //******************************************************************************
 
-void TestSuite::endingTestCase(const TestCase& testCase) {
+void TestSuite::endingTestCase(const TestCase&) {
    tearDown();
    //printf("ending test case %s\n", testCase.getName().c_str());
 }
 
 //******************************************************************************
 
-void TestSuite::require(bool expression, std::string testDesc) {
+void TestSuite::require(bool expression, const std::string& testDesc) {
    if (!expression) {
       ++m_numFailures;
       printf("*** failure: expected true, got false (%s)\n",
@@ -122,7 +122,7 @@ void TestSuite::require(bool expression, std::string testDesc) {
 
 //******************************************************************************
 
-void TestSuite::requireFalse(bool expression, std::string testDesc) {
+void TestSuite::requireFalse(bool expression, const std::string& testDesc) {
    if (expression) {
       ++m_numFailures;
       printf("*** failure: expected false, got true (%s)\n",
@@ -136,7 +136,7 @@ void TestSuite::requireFalse(bool expression, std::string testDesc) {
 
 void TestSuite::requireStringEquals(const std::string& expected,
                                     const std::string& actual,
-                                    std::string testDesc) {
+                                    const std::string& testDesc) {
    if (expected != actual) {
       ++m_numFailures;
       printf("*** failure: expected '%s', actual='%s' (%s)\n",
@@ -151,7 +151,7 @@ void TestSuite::requireStringEquals(const std::string& expected,
 //******************************************************************************
 
 void TestSuite::requireNonEmptyString(const std::string& actual,
-                                      std::string testDesc) {
+                                      const std::string& testDesc) {
    if (actual.empty()) {
       ++m_numFailures;
       printf("*** failure: expected non-empty string (%s)\n",
@@ -165,7 +165,7 @@ void TestSuite::requireNonEmptyString(const std::string& actual,
 
 void TestSuite::requireException(const char* exceptionType,
                                  Runnable* runnable,
-                                 std::string testDesc) {
+                                 const std::string& testDesc) {
    ++m_numTestsExecuted;
    AutoPointer<Runnable> uniqueRunnable(runnable);
    try {

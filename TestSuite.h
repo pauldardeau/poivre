@@ -36,17 +36,17 @@ public:
    int getNumTestsExecuted() const;
    int getNumFailures() const;
 
-   void require(bool expression, std::string testDesc="");
-   void requireFalse(bool expression, std::string testDesc="");
+   void require(bool expression, const std::string& testDesc="");
+   void requireFalse(bool expression, const std::string& testDesc="");
 
    void requireStringEquals(const std::string& expected,
                             const std::string& actual,
-                            std::string testDesc="");
+                            const std::string& testDesc="");
    void requireNonEmptyString(const std::string& actual,
-                              std::string testDesc="");
+                              const std::string& testDesc="");
    void requireException(const char* exceptionType,
                          Runnable* run,
-                         std::string testDesc="");
+                         const std::string& testDesc="");
 
    void startingTestCase(const TestCase& testCase);
    void endingTestCase(const TestCase& testCase);
