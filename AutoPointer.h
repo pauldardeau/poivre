@@ -22,7 +22,7 @@ public:
     * Constructs an AutoPointer that contains (owns) an object instance
     * @param objectPointer the pointer to the object that will now be owned
     */
-   AutoPointer(T objectPointer) :
+   AutoPointer(T* objectPointer) :
       m_object(objectPointer) {
    }
 
@@ -37,22 +37,22 @@ public:
     * Arrow operator - returns the owned object pointer
     * @return pointer to owned object
     */
-   T& operator->() { return m_object; }
+   T* operator->() { return m_object; }
 
-   T& operator()() { return m_object; }
+   T* operator()() { return m_object; }
 
 
    /**
     * Assigns new object to be owned by the AutoPointer. Deletes old one if present.
-    * @param copyObject the new object that will be owned.
+    * @param newObject the new object that will be owned.
     */
-   void assign(const T& copyObject) {
-      if (m_object != copyObject) {
+   void assign(T* newObject) {
+      if (m_object != newObject) {
          if (m_object) {
             delete m_object;
          }
 
-         m_object = copyObject;
+         m_object = newObject;
       }
    }
 
@@ -64,7 +64,7 @@ public:
       return (NULL != m_object);
    }
 
-   T m_object;
+   T* m_object;
 
 private:
 
