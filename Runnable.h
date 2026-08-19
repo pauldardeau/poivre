@@ -24,9 +24,13 @@ public:
     * Default constructor
     */
    Runnable() :
-      m_completionObserver(NULL),
+      m_completionObserver(nullptr),
       m_runByThreadId(0) {
    }
+
+   // disallow copies
+   Runnable(const Runnable&) = delete;
+   Runnable& operator=(const Runnable&) = delete;
 
    /**
     * Destructor
@@ -93,10 +97,6 @@ private:
    RunCompletionObserver* m_completionObserver;
    std::string m_runByThreadWorkerId;
    int m_runByThreadId;
-
-   // disallow copies
-   Runnable(const Runnable&);
-   Runnable& operator=(const Runnable&);
 };
 
 }

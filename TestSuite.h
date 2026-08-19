@@ -16,27 +16,12 @@ class TestCase;
 
 class TestSuite
 {
-private:
-   std::string m_suiteName;
-   int m_numTestsExecuted;
-   int m_numFailures;
-
-   // no copies
-   TestSuite(const TestSuite& copy);
-   TestSuite& operator=(const TestSuite& copy);
-
-
-protected:
-   virtual void setup();
-   virtual void tearDown();
-
-   virtual void suiteSetup();
-   virtual void suiteTearDown();
-   virtual void runTests() = 0;
-
-
 public:
    TestSuite(const std::string& suiteName);
+
+   // no copies
+   TestSuite(const TestSuite& copy) = delete;
+   TestSuite& operator=(const TestSuite& copy) = delete;
 
    virtual ~TestSuite();
 
@@ -68,6 +53,20 @@ public:
 
    void failTest(const std::string& failureMessage);
 
+
+protected:
+   virtual void setup();
+   virtual void tearDown();
+
+   virtual void suiteSetup();
+   virtual void suiteTearDown();
+   virtual void runTests() = 0;
+
+
+private:
+   std::string m_suiteName;
+   int m_numTestsExecuted;
+   int m_numFailures;
 };
 
 }

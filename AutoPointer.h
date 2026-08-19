@@ -26,6 +26,10 @@ public:
       m_object(objectPointer) {
    }
 
+   // no copies
+   AutoPointer(const AutoPointer<T>&) = delete;
+   AutoPointer<T>& operator=(const AutoPointer<T>&) = delete;
+
    /**
     * Destructor - frees the owned object
     */
@@ -61,15 +65,11 @@ public:
     * @return true if AutoPointer has an object, false otherwise
     */
    bool haveObject() const {
-      return (NULL != m_object);
+      return (nullptr != m_object);
    }
 
 private:
    T* m_object;
-
-   // no copies
-   AutoPointer(const AutoPointer<T>&);
-   AutoPointer<T>& operator=(const AutoPointer<T>&);
 };
 
 }

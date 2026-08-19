@@ -1,10 +1,10 @@
 // Copyright Paul Dardeau, SwampBits LLC 2017
 // BSD License
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cerrno>
 #include <unistd.h>
 
 #include "TestSuite.h"

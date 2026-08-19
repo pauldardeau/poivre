@@ -45,7 +45,7 @@ public:
    /**
     * Destructor
     */
-   virtual ~BasicException() throw () {}
+   virtual ~BasicException() noexcept {}
 
    /**
     * Retrieve the type (class name) of exception
@@ -74,7 +74,7 @@ public:
     * Retrieves the C string reason for the exception
     * @return C string reason for exception
     */
-   virtual const char* what() const throw () {
+   virtual const char* what() const noexcept override {
       return m_what.c_str();
    }
 
