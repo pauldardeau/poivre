@@ -23,35 +23,25 @@ TestSuite::TestSuite(const std::string& suiteName) :
 
 //******************************************************************************
 
-TestSuite::TestSuite(const TestSuite& copy) :
-   m_suiteName(copy.m_suiteName),
-   m_numTestsExecuted(copy.m_numTestsExecuted),
-   m_numFailures(copy.m_numFailures) {
-}
-
-//******************************************************************************
-
 TestSuite::~TestSuite() {
-}
-
-//******************************************************************************
-
-TestSuite& TestSuite::operator=(const TestSuite& copy) {
-   if (this == &copy) {
-      return *this;
-   }
-
-   m_suiteName = copy.m_suiteName;
-   m_numTestsExecuted = copy.m_numTestsExecuted;
-   m_numFailures = copy.m_numFailures;
-
-   return *this;
 }
 
 //******************************************************************************
 
 const std::string& TestSuite::getName() const {
    return m_suiteName;
+}
+
+//******************************************************************************
+
+int TestSuite::getNumTestsExecuted() const {
+   return m_numTestsExecuted;
+}
+
+//******************************************************************************
+
+int TestSuite::getNumFailures() const {
+   return m_numFailures;
 }
 
 //******************************************************************************

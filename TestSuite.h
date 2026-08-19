@@ -21,6 +21,10 @@ private:
    int m_numTestsExecuted;
    int m_numFailures;
 
+   // no copies
+   TestSuite(const TestSuite& copy);
+   TestSuite& operator=(const TestSuite& copy);
+
 
 protected:
    virtual void setup();
@@ -33,11 +37,8 @@ protected:
 
 public:
    TestSuite(const std::string& suiteName);
-   TestSuite(const TestSuite& copy);
 
    virtual ~TestSuite();
-
-   TestSuite& operator=(const TestSuite& copy);
 
 
    // file management
@@ -47,6 +48,8 @@ public:
    void run();
 
    const std::string& getName() const;
+   int getNumTestsExecuted() const;
+   int getNumFailures() const;
 
    void require(bool expression, std::string testDesc="");
    void requireFalse(bool expression, std::string testDesc="");
