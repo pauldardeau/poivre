@@ -28,3 +28,6 @@
 *.out
 *.app
 /poivre_tests
+
+# CMake out-of-source build directory
+/build/

@@ -4,7 +4,10 @@
 
 A small, dependency-free C++ unit testing library.
 
-This project has no dependencies on other projects. When built, it's a single shared library file named `poivre.so`.
+This project has no dependencies on other projects. The Makefile builds a single shared
+library file named `poivre.so`; the CMake build (below) produces a static library by default.
+Either way, only three source files are involved: `TestCase.cpp`, `TestSuite.cpp`, and
+`TestRegistry.cpp`.
 
 ## Building
 
@@ -12,6 +15,34 @@ This project has no dependencies on other projects. When built, it's a single sh
 make        # builds poivre.so
 make test   # builds and runs poivre's own self-tests (tests/SelfTests.cpp)
 ```
+
+### Building with CMake
+
+A `CMakeLists.txt` is also provided, mainly for consumers who want to pull poivre in as a
+proper dependency rather than hand-writing `-I` flags:
+
+```bash
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build --output-on-failure   # runs poivre's own self-tests
+```
+
+To depend on poivre from another CMake project - vendored as a git submodule, the same way
+chaudière/misère/tonnerre/chapeau already vendor it:
+
+```cmake
+add_subdirectory(poivre)
+target_link_libraries(my_tests PRIVATE poivre)
+```
+
+That's it - no `-I` needed; the include directory and C++20 requirement both propagate
+automatically. `add_subdirectory()` also skips building poivre's own self-tests by default
+(only relevant when poivre itself is the top-level project), so it doesn't add an extra
+test binary to your build.
+
+The Makefile isn't going anywhere - both build systems produce the same three sources
+(`TestCase.cpp`, `TestSuite.cpp`, `TestRegistry.cpp`) and stay in sync with each other, so use
+whichever fits your project.
 
 ## Writing a test suite
 
