@@ -98,6 +98,11 @@ bool TestSuite::deleteFile(const std::string& filePath) {
 
 void TestSuite::startingTestCase(const TestCase& testCase) {
    printf("--------------- running test: %s -----------\n", testCase.getName().c_str());
+   // flushed so that a crash during this test case still leaves an accurate
+   // record of which test was running - stdout is fully buffered (not
+   // line-buffered) when captured by CI, so without this the line can sit
+   // unflushed and appear out of order (or not at all) in the log
+   fflush(stdout);
    setup();
 }
 
