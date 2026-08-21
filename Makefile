@@ -9,6 +9,7 @@ TEST_BIN = poivre_tests
 
 OBJS = TestCase.o \
 TestSuite.o \
+TestRegistry.o \
 
 all : $(LIB_NAME)
 
@@ -23,7 +24,7 @@ clean :
 $(LIB_NAME) : $(OBJS)
 	$(CC) -shared -fPIC -pthread $(OBJS) -o $(LIB_NAME)
 
-$(TEST_BIN) : TestCase.cpp TestSuite.cpp tests/SelfTests.cpp
+$(TEST_BIN) : TestCase.cpp TestSuite.cpp TestRegistry.cpp tests/SelfTests.cpp
 	$(CC) -std=c++20 -I. -pthread -Wall -Wextra $^ -o $(TEST_BIN)
 
 %.o : %.cpp

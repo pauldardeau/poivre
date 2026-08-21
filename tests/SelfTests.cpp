@@ -11,6 +11,7 @@
 #include "Runnable.h"
 #include "TestCase.h"
 #include "TestMacros.h"
+#include "TestRegistry.h"
 #include "TestSuite.h"
 
 using namespace poivre;
@@ -152,7 +153,61 @@ private:
    int m_tearDownCount;
 };
 
+// ---- fixture for POIVRE_TEST_CASE (self-registering test cases) below.
+//      Its own runTests() is deliberately empty: the whole point of
+//      POIVRE_TEST_CASE is that its test cases don't need to be listed
+//      there. ----
+
+class PoivreTestCaseDemoSuite : public TestSuite {
+public:
+   PoivreTestCaseDemoSuite() :
+      TestSuite("PoivreTestCaseDemoSuite"),
+      m_counter(0) {
+      ++s_constructCount;
+   }
+
+   int getCounter() const { return m_counter; }
+   void bumpCounter() { ++m_counter; }
+
+   static int s_constructCount;
+   static int s_setupCount;
+   static int s_tearDownCount;
+
+protected:
+   void setup() override {
+      ++s_setupCount;
+   }
+
+   void tearDown() override {
+      ++s_tearDownCount;
+   }
+
+   void runTests() override {
+   }
+
+private:
+   int m_counter;
+};
+
+int PoivreTestCaseDemoSuite::s_constructCount = 0;
+int PoivreTestCaseDemoSuite::s_setupCount = 0;
+int PoivreTestCaseDemoSuite::s_tearDownCount = 0;
+
 }  // namespace
+
+// each POIVRE_TEST_CASE below gets its own freshly constructed
+// PoivreTestCaseDemoSuite instance - if bumpCounter() from the first test
+// leaked into the second, testFreshInstancePerCase (below) would fail.
+
+POIVRE_TEST_CASE(PoivreTestCaseDemoSuite, testBumpCounter) {
+   require(getCounter() == 0, "a freshly constructed instance should start with counter == 0");
+   bumpCounter();
+   require(getCounter() == 1, "bumpCounter should increment the counter");
+}
+
+POIVRE_TEST_CASE(PoivreTestCaseDemoSuite, testFreshInstancePerCase) {
+   require(getCounter() == 0, "each POIVRE_TEST_CASE should get its own fresh instance, not share state with testBumpCounter");
+}
 
 // ---- the real suite: every assertion here is expected to PASS.
 //      A regression in the library will show up as a failure here. ----
@@ -168,6 +223,7 @@ protected:
       testCaseLifecycle();
       testAssertionCounting();
       testExceptionMatching();
+      testSelfRegisteringTestCases();
    }
 
 private:
@@ -230,6 +286,24 @@ private:
 
       require(victim.getNumTestsExecuted() == 4, "expected 4 executed assertions in the victim suite");
       require(victim.getNumFailures() == 3, "expected 3 recorded failures in the victim suite");
+   }
+
+   void testSelfRegisteringTestCases() {
+      TEST_CASE("POIVRE_TEST_CASE self-registers, discovers, and runs without being listed in runTests()");
+
+      PoivreTestCaseDemoSuite::s_constructCount = 0;
+      PoivreTestCaseDemoSuite::s_setupCount = 0;
+      PoivreTestCaseDemoSuite::s_tearDownCount = 0;
+
+      const int registryFailures = TestRegistry::instance().runAll();
+
+      require(registryFailures == 0, "both demo POIVRE_TEST_CASE cases should pass");
+      require(PoivreTestCaseDemoSuite::s_constructCount == 2,
+              "each of the 2 registered POIVRE_TEST_CASE cases should construct its own fixture instance");
+      require(PoivreTestCaseDemoSuite::s_setupCount == 2,
+              "setup() should run once per POIVRE_TEST_CASE, same as it does per TEST_CASE");
+      require(PoivreTestCaseDemoSuite::s_tearDownCount == 2,
+              "tearDown() should run once per POIVRE_TEST_CASE, same as it does per TEST_CASE");
    }
 };
 

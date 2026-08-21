@@ -68,6 +68,10 @@ void TestSuite::suiteTearDown() {
 
 void TestSuite::run() {
    printf("+++++++++++++ running suite: %s +++++++++++\n", m_suiteName.c_str());
+   // flushed for the same reason as startingTestCase() below - a crash
+   // anywhere in this suite should still leave an accurate log of which
+   // suite was running
+   fflush(stdout);
    suiteSetup();
    runTests();
    suiteTearDown();
@@ -83,6 +87,7 @@ std::string TestSuite::getTempFile() const {
       return std::string(fileTemplate);
    } else {
       printf("error: mkstemp failed. errno=%d\n", errno);
+      fflush(stdout);
       return std::string("");
    }
 }
@@ -120,6 +125,9 @@ void TestSuite::require(bool expression, const std::string& testDesc) {
       ++m_numFailures;
       printf("*** failure: expected true, got false (%s)\n",
              testDesc.c_str());
+      // flushed so a failure is on record even if a subsequent statement
+      // in the same test case crashes
+      fflush(stdout);
    }
 
    ++m_numTestsExecuted;
@@ -132,6 +140,7 @@ void TestSuite::requireFalse(bool expression, const std::string& testDesc) {
       ++m_numFailures;
       printf("*** failure: expected false, got true (%s)\n",
              testDesc.c_str());
+      fflush(stdout);
    }
 
    ++m_numTestsExecuted;
@@ -148,6 +157,7 @@ void TestSuite::requireStringEquals(const std::string& expected,
              expected.c_str(),
              actual.c_str(),
              testDesc.c_str());
+      fflush(stdout);
    }
 
    ++m_numTestsExecuted;
@@ -161,6 +171,7 @@ void TestSuite::requireNonEmptyString(const std::string& actual,
       ++m_numFailures;
       printf("*** failure: expected non-empty string (%s)\n",
              testDesc.c_str());
+      fflush(stdout);
    }
 
    ++m_numTestsExecuted;
@@ -181,6 +192,7 @@ void TestSuite::requireException(const char* exceptionType,
       msg += exceptionType;
       msg += ")";
       printf("*** failure: %s\n", msg.c_str());
+      fflush(stdout);
       return;
    } catch (BasicException& be) {
       if (strcmp(exceptionType, be.getType())) {
@@ -193,6 +205,7 @@ void TestSuite::requireException(const char* exceptionType,
          msg += be.getType();
          msg += ")";
          printf("*** failure: %s\n", msg.c_str());
+         fflush(stdout);
       } else {
          // we got what's expected
       }
@@ -206,6 +219,7 @@ void TestSuite::requireException(const char* exceptionType,
       msg += exceptionType;
       msg += ",act=std::exception)";
       printf("*** failure: %s\n", msg.c_str());
+      fflush(stdout);
    } catch (...) {
       //printf("unknown exception caught\n");
 
@@ -216,6 +230,7 @@ void TestSuite::requireException(const char* exceptionType,
       msg += exceptionType;
       msg += ",act=unknown)";
       printf("*** failure: %s\n", msg.c_str());
+      fflush(stdout);
    }
 }
 
@@ -225,6 +240,7 @@ void TestSuite::failTest(const std::string& failureMessage) {
    ++m_numFailures;
    ++m_numTestsExecuted;
    printf("*** failure: %s\n", failureMessage.c_str());
+   fflush(stdout);
 }
 
 //******************************************************************************
