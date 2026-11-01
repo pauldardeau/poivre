@@ -43,7 +43,20 @@ jobs:
         shell: bash
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug ${{ matrix.cmake_args }}
       - name: Build
+        id: build
         # --config only matters for multi-config generators (Visual Studio)
         run: cmake --build build --config Debug
       - name: Test
-        run: ctest --test-dir build -C Debug --output-on-failure
+        id: test
+        # --no-tests=error: a build that discovers no tests must not pass
+        run: ctest --test-dir build -C Debug --no-tests=error --output-on-failure
+      - name: Summary
+        # always runs, so a failed build or test is still reported; it also
+        # fails the job if fewer than 17 tests were discovered. Written in CMake
+        # so it behaves the same on Linux, macOS and Windows.
+        if: always()
+        env:
+          CI_PLATFORM: ${{ matrix.name }}
+          CI_BUILD_RESULT: ${{ steps.build.outcome }}
+          CI_TEST_RESULT: ${{ steps.test.outcome }}
+        run: cmake -DBUILD_DIR=build -DCONFIG=Debug -DMIN_TESTS=17 -P .github/ci/ci_report.cmake
