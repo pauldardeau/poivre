@@ -110,7 +110,100 @@ function(integration_fail message)
    message(FATAL_ERROR "${message}")
 endfunction()
 
+# ---- verifying what ctest reports -------------------------------------------------
+#
+# ctest's exit status decides success. On top of that the number of tests that
+# actually ran and passed is checked from the per-test result lines
+# ("N/M Test #N: name ..... Passed"), which are the same in every CMake version;
+# the sentence ctest prints at the end is NOT used (CMake 3.31 prints
+# "100% tests passed, 0 tests failed out of N", CMake 4.4 prints
+# "100% tests passed out of N").
+
+# ctest_run_problem(<result variable> <ctest exit status> <ctest output> <expected tests>)
+# Sets the variable to "" if ctest succeeded and exactly <expected tests> tests
+# ran and passed, otherwise to a description of the problem.
+function(ctest_run_problem resultVariable rc output expected)
+   set(problem "")
+   if(NOT "${rc}" STREQUAL "0")
+      set(problem "ctest exited with status ${rc}")
+   else()
+      string(REGEX MATCHALL "Test +#[0-9]+: [^\n]*" resultLines "${output}")
+      list(LENGTH resultLines total)
+      set(passed 0)
+      foreach(line IN LISTS resultLines)
+         if(line MATCHES " Passed( |$)")
+            math(EXPR passed "${passed} + 1")
+         endif()
+      endforeach()
+      if(NOT total EQUAL expected OR NOT passed EQUAL expected)
+         set(problem "expected ${expected} test(s) to run and pass, but ctest reported ${total} result line(s), ${passed} of them passed")
+      elseif("${output}" MATCHES "The following tests FAILED")
+         set(problem "ctest listed failed tests")
+      endif()
+   endif()
+   set(${resultVariable} "${problem}" PARENT_SCOPE)
+endfunction()
+
+# sample ctest output in the two wordings observed so far (style: old|new)
+function(sample_ctest_output variable tests style)
+   set(text "Test project /sample\nConstructing a list of tests\n")
+   if(tests GREATER 0)
+      foreach(i RANGE 1 ${tests})
+         string(APPEND text "test ${i}\n    Start ${i}: t${i}\n\n${i}: Test command: /sample/t${i}\n${i}: consumer: classic=ok registry=ok\n${i}/${tests} Test #${i}: t${i} .........................   Passed    0.01 sec\n")
+      endforeach()
+      if(style STREQUAL "old")
+         string(APPEND text "\n100% tests passed, 0 tests failed out of ${tests}\n")
+      else()
+         string(APPEND text "\n100% tests passed out of ${tests}\n")
+      endif()
+      string(APPEND text "\nTotal Test time (real) =   0.03 sec\n")
+   else()
+      string(APPEND text "No tests were found!!!\n")
+   endif()
+   set(${variable} "${text}" PARENT_SCOPE)
+endfunction()
+
+# expect_ctest_verdict(<label> <rc> <output> <expected tests> ACCEPTED|REJECTED)
+function(expect_ctest_verdict label rc output expected verdict)
+   ctest_run_problem(problem "${rc}" "${output}" ${expected})
+   if(verdict STREQUAL "ACCEPTED" AND NOT "${problem}" STREQUAL "")
+      integration_fail("self-check '${label}': should have been accepted but was rejected: ${problem}")
+   endif()
+   if(verdict STREQUAL "REJECTED" AND "${problem}" STREQUAL "")
+      integration_fail("self-check '${label}': should have been rejected but was accepted")
+   endif()
+   message(STATUS "ok: self-check ${label}: ${verdict}")
+endfunction()
+
+# the checks above, applied to sample output (no builds, runs in a moment)
+function(self_check_ctest_verdicts)
+   sample_ctest_output(oldTwo 2 old)
+   sample_ctest_output(newTwo 2 new)
+   sample_ctest_output(newOne 1 new)
+   sample_ctest_output(oldThree 3 old)
+   sample_ctest_output(none 0 new)
+
+   expect_ctest_verdict("older summary wording (CMake 3.31)" 0 "${oldTwo}" 2 ACCEPTED)
+   expect_ctest_verdict("newer summary wording (CMake 4.4)" 0 "${newTwo}" 2 ACCEPTED)
+   expect_ctest_verdict("too few tests ran" 0 "${newOne}" 2 REJECTED)
+   expect_ctest_verdict("too many tests ran" 0 "${oldThree}" 2 REJECTED)
+   expect_ctest_verdict("nonzero ctest exit status" 1 "${newTwo}" 2 REJECTED)
+   expect_ctest_verdict("zero tests (exit status 0)" 0 "${none}" 2 REJECTED)
+   expect_ctest_verdict("zero tests (ctest --no-tests=error exit status)" 8 "${none}" 2 REJECTED)
+   string(REPLACE "t2 .........................   Passed    0.01 sec"
+                  "t2 .....................***Failed    0.01 sec" failedTwo "${newTwo}")
+   expect_ctest_verdict("a failed test line" 0 "${failedTwo}" 2 REJECTED)
+endfunction()
+
 # ---- entry point: report the environment, run the stages in a child cmake -------
+
+# -DINTEGRATION_SELFTEST=ON only runs the checks on sample ctest output
+if(INTEGRATION_SELFTEST)
+   set(integrationStage "self-check")
+   self_check_ctest_verdicts()
+   message(STATUS "poivre integration self-check: ctest verdicts verified")
+   return()
+endif()
 
 if(NOT INTEGRATION_INNER)
    foreach(required POIVRE_SOURCE_DIR WORK_DIR)
@@ -226,6 +319,9 @@ endmacro()
 
 begin_stage("setup")
 
+# the ctest verdict logic is checked on sample output before anything is built
+self_check_ctest_verdicts()
+
 # optional: use this C++ compiler for every project configured below
 set(compilerArgs "")
 if(DEFINED CXX_COMPILER AND NOT "${CXX_COMPILER}" STREQUAL "")
@@ -269,21 +365,25 @@ function(check_consumer name expectedTests)
       -DCMAKE_BUILD_TYPE=${CONFIG} ${compilerArgs} ${ARGN})
    run("${name}: build"
       "${CMAKE_COMMAND}" --build "${buildDir}" --config ${CONFIG})
-   run("${name}: ctest"
-      "${CMAKE_CTEST_COMMAND}" --test-dir "${buildDir}" -C ${CONFIG}
+   # ctest's exit status must be 0 AND exactly ${expectedTests} tests must have
+   # run and passed (see ctest_run_problem; independent of the summary wording)
+   set(ctestCommand "${CMAKE_CTEST_COMMAND}" --test-dir "${buildDir}" -C ${CONFIG}
       --no-tests=error --output-on-failure --verbose)
-
-   if(NOT lastOutput MATCHES "Total Test time")
-      integration_fail("${name}: ctest produced no summary" STDOUT "${lastOutput}")
+   execute_process(COMMAND ${ctestCommand}
+      RESULT_VARIABLE ctestRc OUTPUT_VARIABLE ctestOut ERROR_VARIABLE ctestErr)
+   set(lastOutput "${ctestOut}${ctestErr}")
+   ctest_run_problem(ctestProblem "${ctestRc}" "${lastOutput}" ${expectedTests})
+   if(NOT "${ctestProblem}" STREQUAL "")
+      list(JOIN ctestCommand " " ctestCommandLine)
+      message("---- ${name}: ctest ----\n${lastOutput}\n----")
+      integration_fail("${name}: ${ctestProblem}"
+         COMMAND "${ctestCommandLine}" RC "${ctestRc}" STDOUT "${ctestOut}" STDERR "${ctestErr}")
    endif()
+   message(STATUS "ok: ${name}: ctest")
+
    if(NOT lastOutput MATCHES "consumer: classic=ok registry=ok")
       message("${lastOutput}")
       integration_fail("${name}: the consumer program did not report success"
-         STDOUT "${lastOutput}")
-   endif()
-   if(NOT lastOutput MATCHES "100% tests passed, 0 tests failed out of ${expectedTests}")
-      message("${lastOutput}")
-      integration_fail("${name}: expected ${expectedTests} passing consumer test(s)"
          STDOUT "${lastOutput}")
    endif()
    message(STATUS "${name}: ${expectedTests} consumer test(s) passed")
