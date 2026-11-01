@@ -1,34 +1,9 @@
-// Copyright Paul Dardeau, SwampBits LLC 2017
-// BSD License
+// Compatibility forwarding header.
+//
+// The public headers now live in include/poivre/. New code should include them
+// as <poivre/RunCompletionObserver.h>. This file keeps the historical flat include
+// (#include "RunCompletionObserver.h") working for source-tree consumers, such as projects
+// that vendor poivre as a submodule and add its root directory to their include
+// path. It is not installed.
 
-#ifndef POIVRE_RUNCOMPLETIONOBSERVER_H
-#define POIVRE_RUNCOMPLETIONOBSERVER_H
-
-
-
-namespace poivre
-{
-   class Runnable;
-
-/**
- * RunCompletionObserver is an interface used for callbacks to be notified
- * when a Runnable has completed its run.
- */
-class RunCompletionObserver
-{
-public:
-   /**
-    * Destructor
-    */
-   virtual ~RunCompletionObserver() {}
-
-   /**
-    * Notifies the observer that the Runnable has completed
-    * @param runnable the Runnable that has completed
-    */
-   virtual void notifyRunComplete(Runnable* runnable) = 0;
-};
-
-}
-
-#endif
+#include "include/poivre/RunCompletionObserver.h"

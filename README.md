@@ -32,18 +32,90 @@ With a multi-config generator (Visual Studio, Xcode) add `--config Debug` to the
 CI workflow (`.github/workflows/cpp-build.yml`) builds and tests with Ubuntu GCC, Ubuntu Clang,
 Windows MSVC and macOS Apple Clang; the Makefile is POSIX-only.
 
-To depend on poivre from another CMake project - vendored as a git submodule, the same way
-chaudière/misère/tonnerre/chapeau already vendor it:
+## Using poivre from CMake
+
+Whichever way you get poivre, link the same target. No `-I` flags are needed, and the C++20
+requirement propagates automatically:
+
+```cmake
+target_link_libraries(my_tests PRIVATE poivre::poivre)
+```
+
+poivre builds as a static library by default and has no dependencies beyond the C++ standard
+library (it does not link a thread library; link `Threads::Threads` yourself if your tests start
+threads).
+
+**1. `add_subdirectory`** - poivre vendored in your tree, for example as a git submodule (this is
+how chaudière and chapeau use it):
 
 ```cmake
 add_subdirectory(poivre)
-target_link_libraries(my_tests PRIVATE poivre)
+target_link_libraries(my_tests PRIVATE poivre::poivre)
 ```
 
-That's it - no `-I` needed; the include directory and C++20 requirement both propagate
-automatically. `add_subdirectory()` also skips building poivre's own self-tests by default
-(only relevant when poivre itself is the top-level project), so it doesn't add an extra
-test binary to your build.
+poivre's own self-tests and install rules are only enabled when poivre is the top-level project,
+so your build gets no extra test binary and your `install` is unaffected. If poivre is added more
+than once (for example by you and by a submodule), the first definition is used, provided it is a
+poivre of the same major version. Configuration stops with an explanation if an unrelated target is
+already named `poivre`, if another major version of poivre was added first, or if `poivre::poivre`
+was already imported with `find_package(poivre)` (use the installed package or the source tree, not
+both).
+
+**2. `FetchContent`** - pin an exact revision:
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(poivre
+   GIT_REPOSITORY https://github.com/pauldardeau/poivre.git
+   GIT_TAG        <full commit hash>
+)
+FetchContent_MakeAvailable(poivre)
+target_link_libraries(my_tests PRIVATE poivre::poivre)
+```
+
+**3. `find_package`** - install once, use anywhere:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+cmake --install build --config Release --prefix /path/to/prefix
+```
+
+```cmake
+find_package(poivre CONFIG REQUIRED)    # -DCMAKE_PREFIX_PATH=/path/to/prefix
+target_link_libraries(my_tests PRIVATE poivre::poivre)
+```
+
+The installed package (`lib/cmake/poivre/`) is relocatable: it can be moved to another directory
+and found again, and it contains no source or build directory paths. `POIVRE_INSTALL` (on by
+default only when poivre is the top-level project) controls whether the install rules exist.
+
+### Header conventions
+
+The public headers live in `include/poivre/`. Include them as:
+
+```cpp
+#include <poivre/TestSuite.h>
+#include <poivre/TestMacros.h>
+```
+
+The historical flat spelling keeps working in a source tree, so existing code needs no changes:
+
+```cpp
+#include "TestSuite.h"      // forwarding header at the repository root
+```
+
+Both spellings name the same declarations and can be mixed. Compatibility notes:
+
+- The forwarding headers at the repository root exist for source-tree consumers (`add_subdirectory`,
+  FetchContent, or `-I<poivre checkout>` in a Makefile, as chaudière and chapeau do). They are **not
+  installed**: an installed package provides only `<poivre/...>`.
+- The `.cpp` files stay at the repository root, so Makefiles that compile `../poivre/TestCase.cpp`
+  etc. keep working.
+- The poivre target keeps its original name `poivre`; `poivre::poivre` is an alias to it in a source
+  tree and the exported name in an installed package.
+- Prefer `<poivre/...>` in new code: the flat names (`Runnable.h`, `BasicException.h`, ...) are generic
+  and collide with other libraries' headers when several directories are on the include path.
 
 The Makefile isn't going anywhere - both build systems produce the same three sources
 (`TestCase.cpp`, `TestSuite.cpp`, `TestRegistry.cpp`) and stay in sync with each other, so use
@@ -56,8 +128,8 @@ Each individual test is a member function that starts with the `TEST_CASE` macro
 names the test (for output) and triggers the suite's `setup()`/`tearDown()` hooks around it.
 
 ```cpp
-#include "TestSuite.h"
-#include "TestMacros.h"
+#include <poivre/TestSuite.h>
+#include <poivre/TestMacros.h>
 
 using namespace poivre;
 
@@ -93,7 +165,7 @@ int main() {
 Compile it alongside poivre's sources and your headers directory, for example:
 
 ```bash
-c++ -std=c++20 -I/path/to/poivre my_tests.cpp \
+c++ -std=c++20 -I/path/to/poivre/include my_tests.cpp \
    /path/to/poivre/TestCase.cpp /path/to/poivre/TestSuite.cpp \
    -o my_tests
 ./my_tests
@@ -124,8 +196,8 @@ to be thrown with a type name matching `exceptionType`. Wrap the code under test
 `poivre::Runnable` — `requireException` takes ownership of it and calls `run()`:
 
 ```cpp
-#include "Runnable.h"
-#include "BasicException.h"
+#include <poivre/Runnable.h>
+#include <poivre/BasicException.h>
 
 class DivideByZero : public Runnable {
 public:

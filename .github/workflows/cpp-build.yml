@@ -27,15 +27,19 @@ jobs:
           - name: Ubuntu / GCC
             os: ubuntu-latest
             cmake_args: -DCMAKE_CXX_COMPILER=g++
+            integration_args: -DCXX_COMPILER=g++
           - name: Ubuntu / Clang
             os: ubuntu-latest
             cmake_args: -DCMAKE_CXX_COMPILER=clang++
+            integration_args: -DCXX_COMPILER=clang++
           - name: Windows / MSVC
             os: windows-latest
             cmake_args: ""
+            integration_args: ""
           - name: macOS / Apple Clang
             os: macos-latest
             cmake_args: ""
+            integration_args: ""
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,6 +54,13 @@ jobs:
         id: test
         # --no-tests=error: a build that discovers no tests must not pass
         run: ctest --test-dir build -C Debug --no-tests=error --output-on-failure
+      - name: Package consumers
+        id: integration
+        # a standalone project consumes poivre via add_subdirectory, FetchContent
+        # and find_package (against an installed package that is then moved to
+        # another prefix and checked for source/build paths); see
+        # tests/integration/run_integration.cmake
+        run: cmake -DPOIVRE_SOURCE_DIR=${{ github.workspace }} -DWORK_DIR=${{ runner.temp }}/poivre-integration -DCONFIG=Debug ${{ matrix.integration_args }} -P tests/integration/run_integration.cmake
       - name: Summary
         # always runs, so a failed build or test is still reported; it also
         # fails the job if fewer than 17 tests were discovered. Written in CMake
@@ -59,4 +70,5 @@ jobs:
           CI_PLATFORM: ${{ matrix.name }}
           CI_BUILD_RESULT: ${{ steps.build.outcome }}
           CI_TEST_RESULT: ${{ steps.test.outcome }}
+          CI_INTEGRATION_RESULT: ${{ steps.integration.outcome }}
         run: cmake -DBUILD_DIR=build -DCONFIG=Debug -DMIN_TESTS=17 -P .github/ci/ci_report.cmake

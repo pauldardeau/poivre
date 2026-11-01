@@ -19,6 +19,8 @@ poivre_add_helper(poivre_reg_zero reg_zero.cpp)
 poivre_add_helper(poivre_reg_success reg_success.cpp)
 poivre_add_helper(poivre_reg_exceptions reg_exceptions.cpp)
 poivre_add_helper(poivre_reg_classic classic_cases.cpp)
+# classic_cases.cpp starts threads (poivre itself needs none)
+target_link_libraries(poivre_reg_classic PRIVATE Threads::Threads)
 poivre_add_helper(poivre_reg_temp temp_cases.cpp)
 
 # poivre_add_case(<name> <target> [ARGS <arg>] [ARG2 <arg>] [TEMPKIND usable|missing]

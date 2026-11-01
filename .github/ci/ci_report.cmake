@@ -48,7 +48,7 @@ if(ctestList MATCHES "Total Tests: ([0-9]+)")
    set(testsDiscovered "${CMAKE_MATCH_1}")
 endif()
 
-foreach(name PLATFORM BUILD_RESULT TEST_RESULT)
+foreach(name PLATFORM BUILD_RESULT TEST_RESULT INTEGRATION_RESULT)
    set(value "$ENV{CI_${name}}")
    if("${value}" STREQUAL "")
       set(value "not reported")
@@ -71,6 +71,7 @@ string(APPEND table "| Compiler path | `${compilerPath}` |\n")
 string(APPEND table "| Tests discovered | ${testsDiscovered} (required: at least ${MIN_TESTS}) |\n")
 string(APPEND table "| Build result | ${ci_BUILD_RESULT} |\n")
 string(APPEND table "| Test result | ${ci_TEST_RESULT} |\n")
+string(APPEND table "| Package consumers (add_subdirectory, FetchContent, find_package) | ${ci_INTEGRATION_RESULT} |\n")
 
 message("${table}")
 

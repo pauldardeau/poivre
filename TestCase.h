@@ -1,34 +1,9 @@
-// Copyright Paul Dardeau, SwampBits LLC 2017
-// BSD License
+// Compatibility forwarding header.
+//
+// The public headers now live in include/poivre/. New code should include them
+// as <poivre/TestCase.h>. This file keeps the historical flat include
+// (#include "TestCase.h") working for source-tree consumers, such as projects
+// that vendor poivre as a submodule and add its root directory to their include
+// path. It is not installed.
 
-#ifndef POIVRE_TESTCASE_H
-#define POIVRE_TESTCASE_H
-
-#include <string>
-
-namespace poivre
-{
-
-class TestSuite;
-
-class TestCase
-{
-public:
-   TestCase(TestSuite& testSuite, const std::string& testCaseName);
-
-   // no copies
-   TestCase(const TestCase& copy) = delete;
-   TestCase& operator=(const TestCase& copy) = delete;
-
-   virtual ~TestCase();
-
-   const std::string& getName() const;
-
-private:
-   TestSuite& m_testSuite;
-   std::string m_testCaseName;
-};
-
-}
-
-#endif
+#include "include/poivre/TestCase.h"

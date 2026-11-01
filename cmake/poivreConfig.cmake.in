@@ -1,0 +1,8 @@
+@PACKAGE_INIT@
+
+# poivre has no dependencies beyond the C++ standard library, so there is
+# nothing to find_dependency() here.
+
+include("${CMAKE_CURRENT_LIST_DIR}/poivreTargets.cmake")
+
+check_required_components(poivre)
