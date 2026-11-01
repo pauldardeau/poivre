@@ -1,12 +1,29 @@
 // Copyright Paul Dardeau, SwampBits LLC 2017
 // BSD License
 
+#include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
 #include <exception>
-#include <unistd.h>
+#include <filesystem>
+#include <random>
+#include <system_error>
+
+#ifdef _WIN32
+#  ifndef NOMINMAX
+#     define NOMINMAX
+#  endif
+#  ifndef WIN32_LEAN_AND_MEAN
+#     define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <windows.h>
+#else
+#  include <fcntl.h>
+#  include <unistd.h>
+#endif
 
 #include "TestSuite.h"
 #include "BasicException.h"
@@ -15,6 +32,82 @@
 using namespace poivre;
 
 namespace {
+
+enum class CreateResult { Created, AlreadyExists, Failed };
+
+// Atomically creates a NEW, empty file at path. It either creates the file or
+// reports why it could not; it never opens, truncates or reuses an existing
+// file (O_EXCL / CREATE_NEW), so two creators can never end up with the same
+// file, and there is no check-then-create window.
+CreateResult createNewFile(const std::filesystem::path& path,
+                           std::string& errorText) {
+#ifdef _WIN32
+   HANDLE handle = ::CreateFileW(path.c_str(),
+                                 GENERIC_READ | GENERIC_WRITE,
+                                 0,
+                                 nullptr,
+                                 CREATE_NEW,
+                                 FILE_ATTRIBUTE_NORMAL,
+                                 nullptr);
+   if (handle == INVALID_HANDLE_VALUE) {
+      const DWORD error = ::GetLastError();
+      errorText = "Windows error " + std::to_string(error);
+      return (error == ERROR_FILE_EXISTS || error == ERROR_ALREADY_EXISTS) ?
+         CreateResult::AlreadyExists : CreateResult::Failed;
+   }
+
+   ::CloseHandle(handle);
+   return CreateResult::Created;
+#else
+   const int fd = ::open(path.c_str(), O_RDWR | O_CREAT | O_EXCL, 0600);
+   if (fd == -1) {
+      const int error = errno;
+      errorText = std::strerror(error);
+      return (error == EEXIST) ? CreateResult::AlreadyExists :
+                                 CreateResult::Failed;
+   }
+
+   ::close(fd);
+   return CreateResult::Created;
+#endif
+}
+
+// "poivre" followed by 16 hex digits drawn from the OS random source, mixed
+// with a process-wide counter and the clock so that a weak random_device
+// still produces distinct names. Uniqueness is not relied upon: creation is
+// exclusive and the caller retries on a collision.
+std::string uniqueFileName() {
+   static std::atomic<unsigned long long> counter{0};
+
+   unsigned long long value = 0;
+   try {
+      std::random_device device;
+      value = (static_cast<unsigned long long>(device()) << 32) ^ device();
+   } catch (const std::exception&) {
+      // fall through to the clock and counter
+   }
+
+   value ^= static_cast<unsigned long long>(
+      std::chrono::steady_clock::now().time_since_epoch().count());
+   value ^= (++counter) * 0x9E3779B97F4A7C15ULL;
+
+   static const char hex[] = "0123456789abcdef";
+   std::string name("poivre");
+   for (int shift = 60; shift >= 0; shift -= 4) {
+      name += hex[(value >> shift) & 0xF];
+   }
+
+   return name;
+}
+
+// for diagnostics only; never throws
+std::string printablePath(const std::filesystem::path& path) {
+   try {
+      return path.string();
+   } catch (const std::exception&) {
+      return std::string("<path not representable>");
+   }
+}
 
 // Runs fn; if it throws, records the exception as a failure of the suite
 // (instead of letting it escape) and returns false.
@@ -132,23 +225,63 @@ void TestSuite::run() {
 //******************************************************************************
 
 std::string TestSuite::getTempFile() const {
-   char fileTemplate[] = "/tmp/poivreXXXXXX";
-   const int fd = ::mkstemp(fileTemplate);
-   if (-1 != fd) {
-      ::close(fd);
-      return std::string(fileTemplate);
-   } else {
-      printf("error: mkstemp failed. errno=%d\n", errno);
+   namespace fs = std::filesystem;
+
+   // the platform's temporary directory: TMPDIR/TMP/TEMP/TEMPDIR (falling
+   // back to /tmp) on POSIX, GetTempPath() on Windows
+   std::error_code ec;
+   const fs::path directory = fs::temp_directory_path(ec);
+   if (ec || directory.empty()) {
+      printf("error: unable to determine the temporary directory: %s\n",
+             ec ? ec.message().c_str() : "empty path");
       fflush(stdout);
       return std::string("");
    }
+
+   const int maxAttempts = 100;
+   for (int attempt = 0; attempt < maxAttempts; ++attempt) {
+      const fs::path candidate = directory / uniqueFileName();
+
+      std::string errorText;
+      const CreateResult result = createNewFile(candidate, errorText);
+
+      if (result == CreateResult::Created) {
+         try {
+            return candidate.string();
+         } catch (const std::exception& e) {
+            // the path cannot be represented in this narrow string type
+            std::error_code ignored;
+            fs::remove(candidate, ignored);
+            printf("error: temporary file path is not representable: %s\n",
+                   e.what());
+            fflush(stdout);
+            return std::string("");
+         }
+      }
+
+      if (result == CreateResult::Failed) {
+         printf("error: unable to create a temporary file in '%s': %s\n",
+                printablePath(directory).c_str(),
+                errorText.c_str());
+         fflush(stdout);
+         return std::string("");
+      }
+
+      // AlreadyExists: an astronomically unlikely name collision; try again
+   }
+
+   printf("error: no unused temporary file name found in '%s'\n",
+          printablePath(directory).c_str());
+   fflush(stdout);
+   return std::string("");
 }
 
 //******************************************************************************
 
 bool TestSuite::deleteFile(const std::string& filePath) {
-   const int rc = remove(filePath.c_str());
-   return (0 == rc);
+   std::error_code ec;
+   const bool removed = std::filesystem::remove(std::filesystem::path(filePath), ec);
+   return removed && !ec;
 }
 
 //******************************************************************************
@@ -286,7 +419,7 @@ void TestSuite::requireException(const char* exceptionType,
       } else {
          // we got what's expected
       }
-   } catch (std::exception& e) {
+   } catch (std::exception&) {
       //printf("std::exception caught: %s\n", e.what());
 
       ++m_numFailures;

@@ -2,6 +2,9 @@ name: Build
 on:
   push:
     branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -15,13 +18,32 @@ jobs:
         run: make test
 
   cmake-build:
-    runs-on: ubuntu-latest
+    name: CMake (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu / GCC
+            os: ubuntu-latest
+            cmake_args: -DCMAKE_CXX_COMPILER=g++
+          - name: Ubuntu / Clang
+            os: ubuntu-latest
+            cmake_args: -DCMAKE_CXX_COMPILER=clang++
+          - name: Windows / MSVC
+            os: windows-latest
+            cmake_args: ""
+          - name: macOS / Apple Clang
+            os: macos-latest
+            cmake_args: ""
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Configure
-        run: cmake -S . -B build
+        shell: bash
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug ${{ matrix.cmake_args }}
       - name: Build
-        run: cmake --build build
+        # --config only matters for multi-config generators (Visual Studio)
+        run: cmake --build build --config Debug
       - name: Test
-        run: ctest --test-dir build --output-on-failure
+        run: ctest --test-dir build -C Debug --output-on-failure

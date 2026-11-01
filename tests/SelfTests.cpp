@@ -2,9 +2,14 @@
 // BSD License
 
 #include <cstdio>
+#include <filesystem>
 #include <fstream>
+#include <mutex>
+#include <set>
 #include <stdexcept>
 #include <string>
+#include <thread>
+#include <vector>
 
 #include "AutoPointer.h"
 #include "BasicException.h"
@@ -225,6 +230,8 @@ protected:
       testExceptionMatching();
       testSelfRegisteringTestCases();
       testExitCodeHelpers();
+      testTempFileCreation();
+      testTempFileUniquenessUnderConcurrency();
    }
 
 private:
@@ -308,6 +315,94 @@ private:
               "setup() should run once per POIVRE_TEST_CASE, same as it does per TEST_CASE");
       require(PoivreTestCaseDemoSuite::s_tearDownCount == 2,
               "tearDown() should run once per POIVRE_TEST_CASE, same as it does per TEST_CASE");
+   }
+
+   void testTempFileCreation() {
+      TEST_CASE("getTempFile creates an empty regular file in the platform temp directory");
+
+      namespace fs = std::filesystem;
+
+      const std::string path = getTempFile();
+      requireNonEmptyString(path, "getTempFile should return a path");
+
+      std::error_code ec;
+      require(fs::is_regular_file(path, ec), "the returned path should be an existing regular file");
+      require(fs::file_size(path, ec) == 0 && !ec, "the new file should be empty");
+
+      const fs::path parent = fs::path(path).parent_path();
+      require(fs::equivalent(parent, fs::temp_directory_path(), ec) && !ec,
+              "the file should be in std::filesystem::temp_directory_path()");
+
+      const std::string name = fs::path(path).filename().string();
+      require(name.rfind("poivre", 0) == 0, "the file name should start with 'poivre'");
+
+      // existing contents are never reused: a second call must not hand out
+      // (or truncate) the first file
+      {
+         std::ofstream out(path);
+         out << "keep me";
+      }
+      const std::string second = getTempFile();
+      require(second != path, "a second call should return a different path");
+      {
+         std::ifstream in(path);
+         std::string content;
+         std::getline(in, content);
+         requireStringEquals("keep me", content, "creating another temp file must not touch the first");
+      }
+
+      require(deleteFile(path), "deleteFile should remove the file");
+      requireFalse(fs::exists(path, ec), "the file should be gone after deleteFile");
+      requireFalse(deleteFile(path), "deleting a file that is already gone should report false");
+      require(deleteFile(second), "the second file should be removable");
+   }
+
+   void testTempFileUniquenessUnderConcurrency() {
+      TEST_CASE("concurrent getTempFile calls return distinct, existing files; all are cleaned up");
+
+      namespace fs = std::filesystem;
+      const int threads = 8;
+      const int perThread = 25;
+
+      std::vector<std::string> paths;
+      std::mutex pathsLock;
+
+      std::vector<std::thread> workers;
+      for (int t = 0; t < threads; ++t) {
+         workers.emplace_back([this, &paths, &pathsLock, perThread] {
+            for (int i = 0; i < perThread; ++i) {
+               const std::string path = getTempFile();
+               std::lock_guard<std::mutex> guard(pathsLock);
+               paths.push_back(path);
+            }
+         });
+      }
+      for (auto& worker : workers) {
+         worker.join();
+      }
+
+      require(static_cast<int>(paths.size()) == threads * perThread, "every call should return");
+
+      const std::set<std::string> distinct(paths.begin(), paths.end());
+      require(distinct.size() == paths.size(), "all returned paths should be distinct");
+      requireFalse(distinct.count("") > 0, "no call should have failed");
+
+      std::error_code ec;
+      int missing = 0;
+      for (const std::string& path : paths) {
+         if (!fs::exists(path, ec)) {
+            ++missing;
+         }
+      }
+      require(missing == 0, "every returned file should exist");
+
+      int notDeleted = 0;
+      for (const std::string& path : paths) {
+         if (!deleteFile(path) || fs::exists(path, ec)) {
+            ++notDeleted;
+         }
+      }
+      require(notDeleted == 0, "every file should be deleted by deleteFile");
    }
 
    // the pure exit-code rules; process-level behaviour (exit status of real

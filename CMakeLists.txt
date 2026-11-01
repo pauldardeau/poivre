@@ -32,9 +32,14 @@ add_library(poivre
 target_compile_features(poivre PUBLIC cxx_std_20)
 set_target_properties(poivre PROPERTIES CXX_EXTENSIONS OFF)
 
-target_compile_options(poivre PRIVATE
-   $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra>
-)
+# MSVC is also true for clang-cl, where -Wall would mean -Weverything
+if(MSVC)
+   target_compile_options(poivre PRIVATE /W4)
+else()
+   target_compile_options(poivre PRIVATE
+      $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra>
+   )
+endif()
 
 # Headers live at the repo root (no include/ subdirectory), so this is
 # the one directory a consumer needs on its include path - handled here

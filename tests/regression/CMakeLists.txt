@@ -19,16 +19,24 @@ poivre_add_helper(poivre_reg_zero reg_zero.cpp)
 poivre_add_helper(poivre_reg_success reg_success.cpp)
 poivre_add_helper(poivre_reg_exceptions reg_exceptions.cpp)
 poivre_add_helper(poivre_reg_classic classic_cases.cpp)
+poivre_add_helper(poivre_reg_temp temp_cases.cpp)
 
-# poivre_add_case(<name> <target> [ARGS <arg>] EXIT <n>
+# poivre_add_case(<name> <target> [ARGS <arg>] [ARG2 <arg>] [TEMPDIR <dir>] EXIT <n>
 #                 [MATCH <regex>...] [REJECT <regex>...] [CONCURRENT_LINES <n>])
+# ARG2 may contain spaces. TEMPDIR makes the test process (and so the helper)
+# use <dir> as its temporary directory through every variable the platform
+# consults (TMPDIR/TMP/TEMP/TEMPDIR).
 function(poivre_add_case name target)
-   cmake_parse_arguments(C "" "ARGS;EXIT;CONCURRENT_LINES" "MATCH;REJECT" ${ARGN})
+   cmake_parse_arguments(C "" "ARGS;ARG2;TEMPDIR;EXIT;CONCURRENT_LINES" "MATCH;REJECT" ${ARGN})
 
    set(command ${CMAKE_COMMAND}
       "-DEXE=$<TARGET_FILE:${target}>"
       "-DARGS=${C_ARGS}"
       "-DEXPECT_EXIT=${C_EXIT}")
+
+   if(DEFINED C_ARG2)
+      list(APPEND command "-DARG2=${C_ARG2}")
+   endif()
 
    set(i 0)
    foreach(pattern IN LISTS C_MATCH)
@@ -50,6 +58,11 @@ function(poivre_add_case name target)
 
    add_test(NAME ${name} COMMAND ${command})
    set_tests_properties(${name} PROPERTIES TIMEOUT 180)
+
+   if(DEFINED C_TEMPDIR)
+      set_tests_properties(${name} PROPERTIES ENVIRONMENT
+         "TMPDIR=${C_TEMPDIR};TMP=${C_TEMPDIR};TEMP=${C_TEMPDIR};TEMPDIR=${C_TEMPDIR}")
+   endif()
 endfunction()
 
 # ---- exit status ----------------------------------------------------------
@@ -140,3 +153,26 @@ poivre_add_case(regression_concurrent_assertions poivre_reg_classic
    ARGS concurrent EXIT 0
    MATCH "ASSERTIONS=16000 FAILURES=1600 COUNTS_OK"
    CONCURRENT_LINES 1600)
+
+# ---- temporary files --------------------------------------------------------
+
+# getTempFile() must honour the platform's temporary directory, including one
+# whose name contains spaces, create exactly one empty file per call, and be
+# cleaned up by deleteFile(). (In-process checks of uniqueness under
+# concurrency are in tests/SelfTests.cpp.)
+set(POIVRE_TEMP_WITH_SPACES "${CMAKE_CURRENT_BINARY_DIR}/temp dir with spaces")
+file(MAKE_DIRECTORY "${POIVRE_TEMP_WITH_SPACES}")
+
+poivre_add_case(regression_tempfile_directory_with_spaces poivre_reg_temp
+   ARGS usable ARG2 "${POIVRE_TEMP_WITH_SPACES}" TEMPDIR "${POIVRE_TEMP_WITH_SPACES}"
+   EXIT 0
+   REJECT "[*][*][*]")
+
+# the directory named by the environment does not exist: creation fails, the
+# failure is reported, the process survives
+set(POIVRE_TEMP_MISSING "${CMAKE_CURRENT_BINARY_DIR}/no such temp directory")
+
+poivre_add_case(regression_tempfile_failure_is_reported poivre_reg_temp
+   ARGS unusable TEMPDIR "${POIVRE_TEMP_MISSING}"
+   EXIT 0
+   MATCH "error: " "MARKER_SURVIVED_FAILURE")

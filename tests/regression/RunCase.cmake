@@ -16,8 +16,14 @@ if(NOT DEFINED EXE OR NOT DEFINED EXPECT_EXIT)
    message(FATAL_ERROR "RunCase.cmake: EXE and EXPECT_EXIT are required")
 endif()
 
+# ARG2 (optional) is a second argument that may contain spaces
+set(extraArg "")
+if(DEFINED ARG2)
+   set(extraArg "${ARG2}")
+endif()
+
 execute_process(
-   COMMAND "${EXE}" ${ARGS}
+   COMMAND "${EXE}" ${ARGS} ${extraArg}
    RESULT_VARIABLE rc
    OUTPUT_VARIABLE out
    ERROR_VARIABLE err

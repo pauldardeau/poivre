@@ -27,6 +27,11 @@ cmake --build build
 ctest --test-dir build --output-on-failure   # poivre's self-tests + subprocess regression tests (tests/regression)
 ```
 
+With a multi-config generator (Visual Studio, Xcode) add `--config Debug` to the build and
+`-C Debug` to `ctest`. No dependencies beyond a C++20 compiler and CMake are needed. The
+CI workflow (`.github/workflows/cpp-build.yml`) builds and tests with Ubuntu GCC, Ubuntu Clang,
+Windows MSVC and macOS Apple Clang; the Makefile is POSIX-only.
+
 To depend on poivre from another CMake project - vendored as a git submodule, the same way
 chaudière/misère/tonnerre/chapeau already vendor it:
 
@@ -173,7 +178,11 @@ The counters are atomic, so assertions may be made from several threads.
 
 ## Other utilities
 
-- `getTempFile()` / `deleteFile(path)` — create/remove a scratch file for tests that need one
+- `getTempFile()` / `deleteFile(path)` — create/remove a scratch file for tests that need one.
+  `getTempFile()` creates a new, empty file (exclusively, so it never reuses or overwrites an
+  existing one) in the platform's temporary directory (`TMPDIR`/`TMP`/`TEMP`/`TEMPDIR`, else
+  `/tmp`, on POSIX; `GetTempPath` on Windows), named `poivre` plus 16 hex digits, and returns
+  its path. On failure it prints a diagnostic and returns an empty string.
 - `getNumTestsExecuted()` (assertions evaluated), `getNumFailures()`, `getNumTestCasesRun()` —
   inspect results after `run()`
 - `poivre::AutoPointer<T>` — a minimal RAII owning-pointer used internally (e.g. by
