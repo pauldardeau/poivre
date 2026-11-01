@@ -4,6 +4,8 @@
 #ifndef POIVRE_TESTMACROS_H
 #define POIVRE_TESTMACROS_H
 
+#include <exception>
+
 #include "TestCase.h"
 #include "TestRegistry.h"
 
@@ -26,6 +28,10 @@ poivre::TestCase macroTestCase(*this,testCaseName);
 // as today. SuiteClass must be default-constructible (true of every
 // existing TestSuite subclass in this codebase).
 //
+// An exception escaping the test body, setup() or tearDown() (std::exception
+// or anything else) is caught and recorded as a failure of that test case;
+// the remaining test cases still run.
+//
 // Usage:
 //   POIVRE_TEST_CASE(TestThread, testHasAttribute) {
 //      PthreadsThread thread;
@@ -44,8 +50,14 @@ class SuiteClass##_##testName##_TestCase : public SuiteClass { \
 public: \
    void poivreTestBody(); \
    void poivreInvoke() { \
-      poivre::TestCase testCase(*this, #testName); \
-      poivreTestBody(); \
+      try { \
+         poivre::TestCase testCase(*this, #testName); \
+         poivreTestBody(); \
+      } catch (const std::exception& poivreEx) { \
+         recordUnexpectedException(#SuiteClass "." #testName, poivreEx.what()); \
+      } catch (...) { \
+         recordUnexpectedException(#SuiteClass "." #testName, nullptr); \
+      } \
    } \
 protected: \
    void runTests() override {} \

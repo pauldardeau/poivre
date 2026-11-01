@@ -24,7 +24,7 @@ proper dependency rather than hand-writing `-I` flags:
 ```bash
 cmake -S . -B build
 cmake --build build
-ctest --test-dir build --output-on-failure   # runs poivre's own self-tests
+ctest --test-dir build --output-on-failure   # poivre's self-tests + subprocess regression tests (tests/regression)
 ```
 
 To depend on poivre from another CMake project - vendored as a git submodule, the same way
@@ -81,7 +81,7 @@ private:
 int main() {
    MathTests suite;
    suite.run();
-   return (suite.getNumFailures() == 0) ? 0 : 1;
+   return suite.exitCode();   // 0 = all passed; 1 = a failure, or nothing was asserted
 }
 ```
 
@@ -146,11 +146,36 @@ Override any of these `protected` virtuals in your suite as needed:
 | `suiteSetup()` / `suiteTearDown()` | once, before/after the whole suite |
 | `setup()` / `tearDown()` | once per `TEST_CASE`, before/after each test |
 
+## Exit status, exceptions and empty runs
+
+**Return `exitCode()` from `main()`, not a failure count.** A process exit status is truncated
+(to 8 bits on POSIX), so returning 256 or 512 failures directly would report success.
+
+| Use | Returns |
+|---|---|
+| `suite.exitCode()` (classic suite, after `run()`) | `0` if at least one assertion ran and none failed, otherwise `1` |
+| `TestRegistry::instance().runAllAndGetExitCode()` (`POIVRE_TEST_CASE` tests) | the same rule over all registered test cases; `1` if none ran |
+| `TestRegistry::instance().runAll()` | the exact failure **count** (not an exit status) |
+
+A suite that evaluates no assertions, or a registry with no test cases, does not pass.
+
+An exception that escapes a test is recorded as a failure instead of ending the process
+(`std::exception` with its `what()` text, or any other thrown type). This covers `setup()`, the
+test body, `tearDown()`, `suiteSetup()` and `suiteTearDown()`:
+
+- `POIVRE_TEST_CASE` tests are isolated from each other: later test cases still run.
+- In a classic suite, `runTests()` is your own code, so after a test method throws the rest of
+  that `runTests()` call is skipped (later suites still run). If `suiteSetup()` throws,
+  `runTests()` is skipped; `suiteTearDown()` always runs.
+- If `setup()` throws, that test's body is not run.
+
+The counters are atomic, so assertions may be made from several threads.
+
 ## Other utilities
 
 - `getTempFile()` / `deleteFile(path)` — create/remove a scratch file for tests that need one
-- `getNumTestsExecuted()` / `getNumFailures()` — inspect results after `run()`, e.g. to set a
-  process exit code for CI (see the `main()` example above)
+- `getNumTestsExecuted()` (assertions evaluated), `getNumFailures()`, `getNumTestCasesRun()` —
+  inspect results after `run()`
 - `poivre::AutoPointer<T>` — a minimal RAII owning-pointer used internally (e.g. by
   `requireException` to own the `Runnable`)
 

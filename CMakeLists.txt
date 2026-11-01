@@ -58,6 +58,10 @@ if(POIVRE_BUILD_TESTS)
    target_link_libraries(poivre_tests PRIVATE poivre)
 
    add_test(NAME poivre_tests COMMAND poivre_tests)
+
+   # subprocess regression tests for exit status, exception isolation,
+   # zero-test detection and concurrent accounting
+   add_subdirectory(tests/regression)
 endif()
 
 include(GNUInstallDirs)

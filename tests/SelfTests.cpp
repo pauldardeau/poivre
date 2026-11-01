@@ -224,6 +224,7 @@ protected:
       testAssertionCounting();
       testExceptionMatching();
       testSelfRegisteringTestCases();
+      testExitCodeHelpers();
    }
 
 private:
@@ -305,6 +306,31 @@ private:
       require(PoivreTestCaseDemoSuite::s_tearDownCount == 2,
               "tearDown() should run once per POIVRE_TEST_CASE, same as it does per TEST_CASE");
    }
+
+   // the pure exit-code rules; process-level behaviour (exit status of real
+   // executables, exceptions, concurrency) is covered by the subprocess
+   // regression tests in tests/regression
+   void testExitCodeHelpers() {
+      TEST_CASE("exit code helpers never turn failures or empty runs into success");
+
+      require(TestRegistry::exitCodeFor(1, 1, 0) == 0, "tests ran and passed -> 0");
+      require(TestRegistry::exitCodeFor(1, 1, 1) == 1, "one failure -> 1");
+      require(TestRegistry::exitCodeFor(1, 256, 256) == 1, "256 failures -> 1, not 256 truncated to 0");
+      require(TestRegistry::exitCodeFor(1, 512, 512) == 1, "512 failures -> 1, not 512 truncated to 0");
+      require(TestRegistry::exitCodeFor(0, 0, 0) == 1, "no test cases -> 1");
+      require(TestRegistry::exitCodeFor(3, 0, 0) == 1, "no assertions -> 1");
+
+      CountingVictimSuite failing;
+      failing.run();
+      require(failing.exitCode() == 1, "a suite with failures has exit code 1");
+
+      LifecycleVictimSuite passing;
+      passing.run();
+      require(passing.exitCode() == 0, "a passing suite has exit code 0");
+
+      LifecycleVictimSuite neverRun;
+      require(neverRun.exitCode() == 1, "a suite that evaluated nothing has exit code 1");
+   }
 };
 
 int main() {
@@ -318,5 +344,5 @@ int main() {
    printf("PoivreSelfTests: %d executed, %d failed\n", executed, failures);
    printf("=============================================\n");
 
-   return (failures == 0) ? 0 : 1;
+   return suite.exitCode();
 }
