@@ -63,11 +63,11 @@ poivre_add_case(regression_exit_512_failures poivre_reg_failures_512 EXIT 1
    MATCH "RAW_COUNT=512" "EXIT_CODE_HELPER=1" "512 executed, 512 failed")
 
 poivre_add_case(regression_zero_registered_tests poivre_reg_zero EXIT 1
-   MATCH "0 executed, 0 failed" "0 test case[(]s[)] run"
+   MATCH "REGISTERED=0" "0 executed, 0 failed" "0 test case[(]s[)] run"
          "no test cases were executed")
 
 poivre_add_case(regression_success_registered poivre_reg_success EXIT 0
-   MATCH "4 executed, 0 failed" "2 test case[(]s[)] run"
+   MATCH "REGISTERED=2" "4 executed, 0 failed" "2 test case[(]s[)] run"
    REJECT "[*][*][*]")
 
 # ---- exceptions in registered test cases ----------------------------------

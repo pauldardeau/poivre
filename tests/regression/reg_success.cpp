@@ -1,6 +1,8 @@
 // Regression helper: a normal, fully passing registered run must exit 0 and
 // print no failure lines.
 
+#include <cstdio>
+
 #include "TestMacros.h"
 #include "TestRegistry.h"
 #include "TestSuite.h"
@@ -28,5 +30,8 @@ POIVRE_TEST_CASE(PassingSuite, secondPasses) {
 }
 
 int main() {
-   return poivre::TestRegistry::instance().runAllAndGetExitCode();
+   poivre::TestRegistry& registry = poivre::TestRegistry::instance();
+   std::printf("REGISTERED=%d\n", registry.getNumRegisteredTestCases());
+   std::fflush(stdout);
+   return registry.runAllAndGetExitCode();
 }

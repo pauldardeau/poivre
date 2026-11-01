@@ -68,6 +68,12 @@ int TestRegistry::getNumFailures() const {
 
 //******************************************************************************
 
+int TestRegistry::getNumRegisteredTestCases() const {
+   return static_cast<int>(m_entries.size());
+}
+
+//******************************************************************************
+
 int TestRegistry::runAll() {
    m_totalTestCasesRun = 0;
    m_totalTestsExecuted = 0;

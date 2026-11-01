@@ -72,6 +72,15 @@ public:
     */
    static int exitCodeFor(int numTestCases, int numAssertions, int numFailures);
 
+   /**
+    * @return how many POIVRE_TEST_CASE test cases have registered
+    *         themselves. Lets a runner that also has hand-written suites
+    *         skip runAll() (and its "nothing ran" diagnostics) when there
+    *         is nothing registered, and still run registered cases if any
+    *         are added later.
+    */
+   int getNumRegisteredTestCases() const;
+
    // totals from the most recent runAll()
    int getNumTestCasesRun() const;
    int getNumAssertions() const;

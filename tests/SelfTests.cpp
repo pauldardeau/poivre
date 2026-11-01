@@ -296,6 +296,9 @@ private:
       PoivreTestCaseDemoSuite::s_setupCount = 0;
       PoivreTestCaseDemoSuite::s_tearDownCount = 0;
 
+      require(TestRegistry::instance().getNumRegisteredTestCases() == 2,
+              "exactly the 2 demo POIVRE_TEST_CASE cases should be registered");
+
       const int registryFailures = TestRegistry::instance().runAll();
 
       require(registryFailures == 0, "both demo POIVRE_TEST_CASE cases should pass");
